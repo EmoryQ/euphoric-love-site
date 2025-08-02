@@ -82,6 +82,7 @@ body {
   margin: 0;
   padding: 0;
   text-transform: none;
+  margin-bottom: 1.5rem;
 }
 
 /* Styling for the split tagline.  The small part corresponds to
