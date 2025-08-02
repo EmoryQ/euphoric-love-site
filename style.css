@@ -81,13 +81,18 @@ body {
    ethereal and warm. */
 /* The small and large parts share the same warm color to unify the phrase. */
 .tagline .small-part {
+  /* Match the original styling: keep the 36px size and
+     remove the custom warm hue so it inherits the default
+     text color from the page. */
   font-size: 2.25rem; /* 36px */
-  color: #fff4e5;
+  color: inherit;
 }
 
 .tagline .large-part {
+  /* Likewise, keep the 72px size and inherit the default
+     text color instead of forcing a separate hue. */
   font-size: 4.5rem; /* 72px */
-  color: #fff4e5;
+  color: inherit;
 }
 
 .intro-text {
