@@ -61,7 +61,8 @@ body {
   font-family: "Playfair Display", serif;
   font-size: 3rem;
   letter-spacing: 0.05em;
-  color: #fff4e5;
+  /* Match the headline color to the original site's blue */
+  color: #0d6efd;
   margin-bottom: 0.2em;
 }
 
@@ -73,6 +74,8 @@ body {
      “Field” remains capitalized while “the” is lowercase. */
   text-transform: none;
   margin-bottom: 0.5em;
+  /* Use the vibrant blue from the original site for the tagline */
+  color: #0d6efd;
 }
 
 /* Styling for the split tagline.  The small part corresponds to
