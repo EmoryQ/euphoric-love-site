@@ -61,40 +61,38 @@ body {
   font-family: "Playfair Display", serif;
   font-size: 3rem;
   letter-spacing: 0.05em;
-  /* Match the headline color to the original site's blue */
-  color: #0d6efd;
+
+  /* Apply original blue from legacy site */
+  color: #225FBA;
+
   margin-bottom: 0.2em;
 }
 
 .tagline {
-  /* Maintain lowercase styling and general layout for the tagline */
-  font-family: "Playfair Display", serif;
-  line-height: 1;
-  /* Preserve the original case for the tagline text so that
-     “Field” remains capitalized while “the” is lowercase. */
+  /* Adopt legacy site's typography and color */
+  font: normal normal 40px "Montserrat", Arial, sans-serif;
+  font-size: 40px;
+  font-style: normal;
+  font-weight: normal;
+  color: #225FBA;
+  text-decoration: none;
+  text-align: center;
+  line-height: 40px;
+  margin: 0;
+  padding: 0;
   text-transform: none;
-  margin-bottom: 0.5em;
-  /* Use the vibrant blue from the original site for the tagline */
-  color: #0d6efd;
 }
 
 /* Styling for the split tagline.  The small part corresponds to
    “the” and the large part corresponds to “Field,” matching the
-   original sizes (36px and 72px respectively). Colors are kept
-   ethereal and warm. */
-/* The small and large parts share the same warm color to unify the phrase. */
+   original sizes (36px and 72px respectively). */
 .tagline .small-part {
-  /* Match the original styling: keep the 36px size and
-     remove the custom warm hue so it inherits the default
-     text color from the page. */
-  font-size: 2.25rem; /* 36px */
+  font-size: 36px;
   color: inherit;
 }
 
 .tagline .large-part {
-  /* Likewise, keep the 72px size and inherit the default
-     text color instead of forcing a separate hue. */
-  font-size: 4.5rem; /* 72px */
+  font-size: 72px;
   color: inherit;
 }
 
