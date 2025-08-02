@@ -15,6 +15,10 @@
   padding: 0;
 }
 
+:root {
+  --accent-color: #225FBA;
+}
+
 body {
   font-family: "Inter", sans-serif;
   line-height: 1.6;
@@ -45,7 +49,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(10, 7, 5, 0.55);
+  background: rgba(2, 10, 25, 0.55);
   backdrop-filter: blur(2px);
   z-index: 1;
 }
@@ -58,13 +62,10 @@ body {
 }
 
 .site-title {
-  font-family: "Playfair Display", serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 3rem;
   letter-spacing: 0.05em;
-
-  /* Apply original blue from legacy site */
-  color: #225FBA;
-
+  color: var(--accent-color);
   margin-bottom: 0.2em;
 }
 
@@ -74,7 +75,7 @@ body {
   font-size: 40px;
   font-style: normal;
   font-weight: normal;
-  color: #225FBA;
+  color: var(--accent-color);
   text-decoration: none;
   text-align: center;
   line-height: 40px;
@@ -100,15 +101,16 @@ body {
   font-size: 1.1rem;
   max-width: 600px;
   margin: 0 auto;
-  color: #e8dfd3;
+  color: #e0eaff;
 }
 
 /* About Section */
 .about {
   padding: 4rem 1rem;
-  background: #1a1210;
-  color: #f5eadd;
+  background: #0a0a0a;
+  color: #e0eaff;
   text-align: center;
+  border-top: 1px solid var(--accent-color);
 }
 
 .about .container {
@@ -117,24 +119,26 @@ body {
 }
 
 .about h3 {
-  font-family: "Playfair Display", serif;
+  font-family: "Montserrat", sans-serif;
   font-size: 2.25rem;
   margin-bottom: 1rem;
-  color: #f5d7c3;
+  color: var(--accent-color);
 }
 
 .about p {
   font-size: 1.125rem;
   margin-bottom: 1.5rem;
+  color: inherit;
 }
 
 /* Footer */
 footer {
   padding: 1rem;
   text-align: center;
-  background: #0c0c0c;
-  color: #8c7566;
+  background: #0a0a0a;
+  color: var(--accent-color);
   font-size: 0.875rem;
+  border-top: 1px solid var(--accent-color);
 }
 
 @media (max-width: 768px) {
