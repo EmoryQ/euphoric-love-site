@@ -66,12 +66,28 @@ body {
 }
 
 .tagline {
+  /* Maintain lowercase styling and general layout for the tagline */
   font-family: "Playfair Display", serif;
-  font-size: 4.5rem;
   line-height: 1;
-  color: #ffe9d6;
-  text-transform: lowercase;
+  /* Preserve the original case for the tagline text so that
+     “Field” remains capitalized while “the” is lowercase. */
+  text-transform: none;
   margin-bottom: 0.5em;
+}
+
+/* Styling for the split tagline.  The small part corresponds to
+   “the” and the large part corresponds to “Field,” matching the
+   original sizes (36px and 72px respectively). Colors are kept
+   ethereal and warm. */
+/* The small and large parts share the same warm color to unify the phrase. */
+.tagline .small-part {
+  font-size: 2.25rem; /* 36px */
+  color: #fff4e5;
+}
+
+.tagline .large-part {
+  font-size: 4.5rem; /* 72px */
+  color: #fff4e5;
 }
 
 .intro-text {
