@@ -61,8 +61,10 @@ body {
   font-family: "Playfair Display", serif;
   font-size: 3rem;
   letter-spacing: 0.05em;
+
   /* Apply original blue from legacy site */
   color: #225FBA;
+
   margin-bottom: 0.2em;
 }
 
