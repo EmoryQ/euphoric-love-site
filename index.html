@@ -1,4 +1,3 @@
-  <!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +26,11 @@
         <span class="small-part">the</span><span class="large-part"> Field</span>
       </h2>
       <p class="intro-text">
-        ...
+        A luminous realm where passion and tranquility intertwine, nurturing your
+        senses beneath an infinite sky. Step into a space that celebrates openness,
+        curiosity and love. Here, the field of existence shimmers like dew‑coated
+        grass under the starlit night — inviting you to wander, dream and savor
+        life’s pleasures.
       </p>
     </div>
   </section>
@@ -36,15 +39,6 @@
   <section class="about">
     <div class="container">
       <h3>Welcome</h3>
-      <p>
-        A luminous realm where passion and tranquility intertwine, nurturing your
-        senses beneath an infinite sky.
-
-        Step into a space that celebrates openness, curiosity and love. Here,
-        the field of existence shimmers like dew-coated grass under the
-        starlit night — inviting you to wander, dream and savor life’s
-        pleasures.
-      </p>
       <p>
         Whether you pause to breathe in the cool evening air or dance
         barefoot in this sanctuary to explore the depths
@@ -87,26 +81,28 @@
     const ctx = canvas.getContext('2d');
     let width = 0, height = 0, dpr = window.devicePixelRatio || 1;
 
+    // --- VisualViewport-aware resize to keep poles circular ---
     function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
-    
+      const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+      const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+
+      width = vw;
+      height = vh;
+
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-    
+
       ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
-      ctx.scale(dpr, dpr);                // scale uniformly for perfect circles
+      ctx.scale(dpr, dpr);                // uniform scale
     }
-    
-    // Handle first load + delayed mobile correction
+
+    // Initial + delayed for mobile bar
     window.addEventListener('load', () => {
       resize();
-      setTimeout(resize, 500); // fix for mobile URL bar resize
+      setTimeout(resize, 300); // after potential address bar collapse
     });
-    
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', () => setTimeout(resize, 300));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
 
     let poleA = { x: 0, y: 0, charge: 1 };
     let poleB = { x: 0, y: 0, charge: -1 };
@@ -199,6 +195,7 @@
 
       const arrival = [];
 
+      // positive lines
       for (let i = 0; i < FIELD_LINE_COUNT; i++) {
         const angle = (i / FIELD_LINE_COUNT) * 2 * Math.PI;
         const r = 12, j = (Math.random() - .5) * 2;
@@ -226,7 +223,7 @@
         ctx.stroke();
       }
 
-      // negative seeds
+      // negative lines
       const gap = computeLargestGap(arrival);
       let span = gap.end - gap.start;
       if (span <= 0) span += 2 * Math.PI;
@@ -268,24 +265,25 @@
       drawFieldLines();
       requestAnimationFrame(animate);
     }
-    
-    // --- Mobile‑safe animation start ---
+
+    // --- Mobile‑safe animation start (triple start) ---
     function startAnimation() {
-      resize();                 // ensure canvas size is correct
-      drawFieldLines();         // force a visible first frame
+      resize();
+      drawFieldLines();            // force a first frame
       requestAnimationFrame(animate);
     }
-    
-    // Start as soon as the DOM is ready
+
     document.addEventListener('DOMContentLoaded', () => {
       startAnimation();
-      // Kick a delayed second start to overcome mobile rAF throttling
-      setTimeout(startAnimation, 200);
+      setTimeout(startAnimation, 150);
+      setTimeout(startAnimation, 600);
     });
-    
-    // Safety net: start on first touch if still inactive
-    document.addEventListener('touchstart', startAnimation, { once: true });
 
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) startAnimation();
+    });
+
+    document.addEventListener('touchstart', startAnimation, { once: true });
   </script>
 </body>
 </html>
