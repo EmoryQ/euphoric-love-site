@@ -13,10 +13,11 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Background image -->
-  <img id="bg-image" src="hero.jpg" alt="" />
-  <!-- Animated Background Canvas -->
-  <canvas id="field"></canvas>
+  <!-- Fixed Background Layer -->
+  <div class="bg-layer">
+    <img id="bg-image" src="hero.jpg" alt="">
+    <canvas id="field"></canvas>
+  </div>
 
   <!-- Hero Section -->
   <section class="hero">
@@ -26,7 +27,8 @@
         <span class="small-part">the</span><span class="large-part"> Field</span>
       </h2>
       <p class="intro-text">
-		...
+        A luminous realm where passion and tranquility intertwine, nurturing your
+        senses beneath an infinite sky.
       </p>
     </div>
   </section>
@@ -36,17 +38,14 @@
     <div class="container">
       <h3>Welcome</h3>
       <p>
-        A luminous realm where passion and tranquility intertwine, nurturing your
-        senses beneath an infinite sky.
-		
-		Step into a space that celebrates openness, curiosity and love. Here,
+        Step into a space that celebrates openness, curiosity and love. Here,
         the field of existence shimmers like dew‑coated grass under the
         starlit night — inviting you to wander, dream and savor life’s
         pleasures.
       </p>
       <p>
         Whether you pause to breathe in the cool evening air or dance
-        barefoot in this sanctuary to explore the depths
+        barefoot on amber blades, this is your sanctuary to explore the depths
         of your spirit and revel in the beauty of being alive.
       </p>
     </div>
@@ -58,7 +57,6 @@
   </footer>
 
   <script>
-    // Current year in footer
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
