@@ -1,59 +1,267 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Euphoric Love – The Field</title>
-    <!-- Google Fonts -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;700&family=Montserrat&display=swap"
-      rel="stylesheet"
-    />
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="overlay"></div>
-      <div class="hero-content">
-        <h2 class="tagline">
-          <span class="small-part">the</span><span class="large-part"> Field</span>
-        </h2>
-        <p class="intro-text">
-          A luminous realm where passion and tranquility intertwine, nurturing your
-          senses beneath an infinite sky.
-        </p>
-      </div>
-    </section>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Euphoric Love – The Field</title>
+  <!-- Google Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;700&family=Montserrat&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background image -->
+  <img id="bg-image" src="hero.jpg" alt="" />
+  <!-- Animated Background Canvas -->
+  <canvas id="field"></canvas>
 
-    <!-- About Section -->
-    <section class="about">
-      <div class="container">
-        <h3>Welcome</h3>
-        <p>
-          Step into a space that celebrates openness, curiosity and love. Here,
-          the field of existence shimmers like dew‑coated grass under the
-          starlit night — inviting you to wander, dream and savor life’s
-          pleasures.
-        </p>
-        <p>
-          Whether you pause to breathe in the cool evening air or dance
-          barefoot on amber blades, this is your sanctuary to explore the depths
-          of your spirit and revel in the beauty of being alive.
-        </p>
-      </div>
-    </section>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="overlay"></div>
+    <div class="hero-content">
+      <h2 class="tagline">
+        <span class="small-part">the</span><span class="large-part"> Field</span>
+      </h2>
+      <p class="intro-text">
+		...
+      </p>
+    </div>
+  </section>
 
-    <!-- Footer -->
-    <footer>
-      <p>© <span id="year"></span> Euphoric.Love</p>
-    </footer>
+  <!-- About Section -->
+  <section class="about">
+    <div class="container">
+      <h3>Welcome</h3>
+      <p>
+        A luminous realm where passion and tranquility intertwine, nurturing your
+        senses beneath an infinite sky.
+		
+		Step into a space that celebrates openness, curiosity and love. Here,
+        the field of existence shimmers like dew‑coated grass under the
+        starlit night — inviting you to wander, dream and savor life’s
+        pleasures.
+      </p>
+      <p>
+        Whether you pause to breathe in the cool evening air or dance
+        barefoot in this sanctuary to explore the depths
+        of your spirit and revel in the beauty of being alive.
+      </p>
+    </div>
+  </section>
 
-    <script>
-      // Automatically insert the current year into the footer
-      document.getElementById("year").textContent = new Date().getFullYear();
-    </script>
-  </body>
+  <!-- Footer -->
+  <footer>
+    <p>© <span id="year"></span> Euphoric.Love</p>
+  </footer>
+
+  <script>
+    // Current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Dipole Field Animation -->
+  <script>
+    // ===== Parameters =====
+    const FIELD_LINE_COUNT = 60;
+    const STEP_SIZE = 10;
+    const TERMINATION_DIST = 8;
+    const POLE_ANIM_SPEED = 0.13;
+    const MAX_STEPS_SAFE = 500;
+
+    // Pole visuals
+    const POLE_RADIUS = 12;
+    const POLE_GLOW_RADIUS = POLE_RADIUS * 3;
+    const POLE_CORE_ALPHA = 0.6;
+    const POLE_GLOW_ALPHA = 0.25;
+    const POLE_RING_ALPHA = 0.15;
+
+    // Field line colors (RGBA)
+    const COLOR_POS = 'rgba(4, 12, 39, 0.35)';
+    const COLOR_NEG = 'rgba(107, 66, 16, 0.35)';
+
+    const canvas = document.getElementById('field');
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0, dpr = window.devicePixelRatio || 1;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let poleA = { x: 0, y: 0, charge: 1 };
+    let poleB = { x: 0, y: 0, charge: -1 };
+
+    function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
+    function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+    function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
+    function len(v) { return Math.hypot(v.x, v.y); }
+    function normalize(v) {
+      const l = Math.hypot(v.x, v.y);
+      return l === 0 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
+    }
+
+    function fieldAt(p) {
+      const rA = sub(p, poleA), rB = sub(p, poleB);
+      const dA = Math.pow(len(rA), 3), dB = Math.pow(len(rB), 3);
+      let e = { x: 0, y: 0 };
+      if (dA !== 0) { e.x += rA.x / dA * poleA.charge; e.y += rA.y / dA * poleA.charge; }
+      if (dB !== 0) { e.x += rB.x / dB * poleB.charge; e.y += rB.y / dB * poleB.charge; }
+      return e;
+    }
+
+    function traceLine(start, direction = 1, terminateAtOpposite = true) {
+      const points = [];
+      let p = { x: start.x, y: start.y };
+      points.push({ x: p.x, y: p.y });
+
+      for (let i = 0; i < MAX_STEPS_SAFE; i++) {
+        const f = fieldAt(p);
+        let fn = normalize(f);
+        if (direction === -1) fn = mul(fn, -1);
+        if (fn.x === 0 && fn.y === 0) break;
+
+        p = add(p, mul(fn, STEP_SIZE));
+        points.push({ x: p.x, y: p.y });
+
+        if (direction === 1 && terminateAtOpposite && len(sub(p, poleB)) < TERMINATION_DIST) break;
+        if (p.x < -50 || p.x > width + 50 || p.y < -50 || p.y > height + 50) break;
+      }
+      return points;
+    }
+
+    function drawPole(p, color) {
+      // Glow
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, POLE_GLOW_RADIUS);
+      grd.addColorStop(0, color.replace(')', `,${POLE_GLOW_ALPHA})`).replace('rgb', 'rgba'));
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_GLOW_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      ctx.fillStyle = color.replace(')', `,${POLE_CORE_ALPHA})`).replace('rgb', 'rgba');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outline
+      ctx.strokeStyle = `rgba(255,255,255,${POLE_RING_ALPHA})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_RADIUS + 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function computeLargestGap(angles) {
+      if (angles.length === 0) return { start: 0, end: Math.PI * 2 };
+      let a = angles.map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI));
+      a.sort((u, v) => u - v);
+      let maxGap = -1, gapStart = 0, gapEnd = 0;
+      for (let i = 0; i < a.length - 1; i++) {
+        const gap = a[i + 1] - a[i];
+        if (gap > maxGap) { maxGap = gap; gapStart = a[i]; gapEnd = a[i + 1]; }
+      }
+      const wrapGap = a[0] + 2 * Math.PI - a[a.length - 1];
+      if (wrapGap > maxGap) { maxGap = wrapGap; gapStart = a[a.length - 1]; gapEnd = a[0] + 2 * Math.PI; }
+      return { start: gapStart, end: gapEnd };
+    }
+
+    function drawFieldLines() {
+      // Transparent fade
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+
+      ctx.lineWidth = 1.2;
+      ctx.lineCap = 'round';
+
+      const arrivalAngles = [];
+
+      // Positive lines
+      for (let i = 0; i < FIELD_LINE_COUNT; i++) {
+        const angle = (i / FIELD_LINE_COUNT) * Math.PI * 2;
+        const r = 12;
+        const jitter = (Math.random() - 0.5) * 2;
+        const sx = poleA.x + Math.cos(angle) * (r + jitter);
+        const sy = poleA.y + Math.sin(angle) * (r + jitter);
+        const path = traceLine({ x: sx, y: sy }, 1, true);
+        if (path.length < 2) continue;
+
+        const last = path[path.length - 1];
+        if (len(sub(last, poleB)) < TERMINATION_DIST + 0.1) {
+          const before = path[path.length - 2] || last;
+          const arrivalVec = sub(before, poleB);
+          const angleOnNeg = Math.atan2(arrivalVec.y, arrivalVec.x);
+          arrivalAngles.push(angleOnNeg < 0 ? angleOnNeg + 2 * Math.PI : angleOnNeg);
+        }
+
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length - 1].x, path[path.length - 1].y);
+        grad.addColorStop(0, COLOR_POS);
+        grad.addColorStop(1, COLOR_NEG);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
+        ctx.stroke();
+      }
+
+      // Negative lines
+      const gap = computeLargestGap(arrivalAngles);
+      let gapSpan = gap.end - gap.start;
+      if (gapSpan <= 0) gapSpan += 2 * Math.PI;
+      const negativeSeedCount = Math.max(4, Math.round(FIELD_LINE_COUNT * (gapSpan / (2 * Math.PI))));
+      for (let i = 0; i < negativeSeedCount; i++) {
+        const fraction = (i + 0.5) / negativeSeedCount;
+        let angle = gap.start + fraction * gapSpan;
+        angle %= 2 * Math.PI;
+        const r = 12;
+        const jitter = (Math.random() - 0.5) * 2;
+        const sx = poleB.x + Math.cos(angle) * (r + jitter);
+        const sy = poleB.y + Math.sin(angle) * (r + jitter);
+        const path = traceLine({ x: sx, y: sy }, -1, false);
+        if (path.length < 2) continue;
+
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length - 1].x, path[path.length - 1].y);
+        grad.addColorStop(0, COLOR_NEG);
+        grad.addColorStop(1, COLOR_POS);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
+        ctx.stroke();
+      }
+
+      drawPole(poleA, 'rgb(4,12,39)');
+      drawPole(poleB, 'rgb(107,66,16)');
+    }
+
+    function animate(time) {
+      const t = time * 0.001 * POLE_ANIM_SPEED;
+      const cx = width / 2, cy = height / 2;
+      const radiusX = Math.min(width, height) * 0.3;
+      const radiusY = Math.min(width, height) * 0.18;
+
+      poleA.x = cx + Math.cos(t * 1.1 + 0.2) * radiusX;
+      poleA.y = cy + Math.sin(t * 0.8) * radiusY;
+      poleB.x = cx + Math.cos(t * 0.9 + Math.PI + 0.5) * radiusX * 0.85;
+      poleB.y = cy + Math.sin(t * 1.3 + Math.PI * 0.6) * radiusY * 1.05;
+
+      drawFieldLines();
+      requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+  </script>
+</body>
 </html>
