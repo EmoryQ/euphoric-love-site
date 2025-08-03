@@ -59,187 +59,233 @@
   </footer>
 
   <script>
+    // Current year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Dipole Field Animation -->
+  <script>
     // ===== Parameters =====
     const FIELD_LINE_COUNT = 60;
     const STEP_SIZE = 10;
     const TERMINATION_DIST = 8;
     const POLE_ANIM_SPEED = 0.13;
     const MAX_STEPS_SAFE = 500;
-  
+
     // Pole visuals
     const POLE_RADIUS = 12;
     const POLE_GLOW_RADIUS = POLE_RADIUS * 3;
     const POLE_CORE_ALPHA = 0.6;
     const POLE_GLOW_ALPHA = 0.25;
     const POLE_RING_ALPHA = 0.15;
-  
+
     // Field line colors (RGBA)
     const COLOR_POS = 'rgba(4, 12, 39, 0.35)';
     const COLOR_NEG = 'rgba(107, 66, 16, 0.35)';
-  
+
     const canvas = document.getElementById('field');
-    const ctx    = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     let width = 0, height = 0, dpr = window.devicePixelRatio || 1;
-  
-    // Mobile-safe resize for perfect circles
+
     function resize() {
-      width  = window.innerWidth;
+      width = window.innerWidth;
       height = window.innerHeight;
-  
-      canvas.width  = width  * dpr;
+    
+      canvas.width = width * dpr;
       canvas.height = height * dpr;
-  
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.scale(dpr, dpr);
+    
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
+      ctx.scale(dpr, dpr);                // scale uniformly for perfect circles
     }
-  
+    
+    // Handle first load + delayed mobile correction
+    window.addEventListener('load', () => {
+      resize();
+      setTimeout(resize, 500); // fix for mobile URL bar resize
+    });
+    
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', () => setTimeout(resize, 300));
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) resize();
-    });
-  
-    // Simple vector helpers
-    function add(a,b){return{x:a.x+b.x,y:a.y+b.y}};
-    function sub(a,b){return{x:a.x-b.x,y:a.y-b.y}};
-    function mul(a,s){return{x:a.x*s,y:a.y*s}};
-    function len(v){return Math.hypot(v.x,v.y)};
-    function normalize(v){const l=Math.hypot(v.x,v.y);return l?{x:v.x/l,y:v.y/l}:{x:0,y:0};}
-  
-    let poleA = { x:0, y:0, charge:1 };
-    let poleB = { x:0, y:0, charge:-1 };
-  
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
+
+    let poleA = { x: 0, y: 0, charge: 1 };
+    let poleB = { x: 0, y: 0, charge: -1 };
+
+    function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
+    function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
+    function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
+    function len(v) { return Math.hypot(v.x, v.y); }
+    function normalize(v) {
+      const l = Math.hypot(v.x, v.y);
+      return l === 0 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
+    }
+
     function fieldAt(p) {
-      const rA = sub(p,poleA), rB = sub(p,poleB);
-      const dA = Math.pow(len(rA),3), dB = Math.pow(len(rB),3);
-      let e={x:0,y:0};
-      if(dA) { e.x += rA.x/dA*poleA.charge; e.y += rA.y/dA*poleA.charge; }
-      if(dB) { e.x += rB.x/dB*poleB.charge; e.y += rB.y/dB*poleB.charge; }
+      const rA = sub(p, poleA), rB = sub(p, poleB);
+      const dA = Math.pow(len(rA), 3), dB = Math.pow(len(rB), 3);
+      let e = { x: 0, y: 0 };
+      if (dA !== 0) { e.x += rA.x / dA * poleA.charge; e.y += rA.y / dA * poleA.charge; }
+      if (dB !== 0) { e.x += rB.x / dB * poleB.charge; e.y += rB.y / dB * poleB.charge; }
       return e;
     }
-  
-    function traceLine(start, direction=1, terminate=true) {
-      let points=[{x:start.x,y:start.y}], p={...start};
-      for(let i=0;i<MAX_STEPS_SAFE;i++){
-        let f=fieldAt(p), fn=normalize(f);
-        if(direction<0) fn=mul(fn,-1);
-        if(!fn.x&&!fn.y) break;
-        p=add(p,mul(fn,STEP_SIZE));
-        points.push({x:p.x,y:p.y});
-        if(direction>0 && terminate && len(sub(p,poleB))<TERMINATION_DIST) break;
-        if(p.x<-50||p.x>width+50||p.y<-50||p.y>height+50) break;
+
+    function traceLine(start, direction = 1, terminateAtOpposite = true) {
+      const points = [];
+      let p = { x: start.x, y: start.y };
+      points.push({ x: p.x, y: p.y });
+
+      for (let i = 0; i < MAX_STEPS_SAFE; i++) {
+        const f = fieldAt(p);
+        let fn = normalize(f);
+        if (direction === -1) fn = mul(fn, -1);
+        if (fn.x === 0 && fn.y === 0) break;
+
+        p = add(p, mul(fn, STEP_SIZE));
+        points.push({ x: p.x, y: p.y });
+
+        if (direction === 1 && terminateAtOpposite && len(sub(p, poleB)) < TERMINATION_DIST) break;
+        if (p.x < -50 || p.x > width + 50 || p.y < -50 || p.y > height + 50) break;
       }
       return points;
     }
-  
-    function drawPole(p,color){
-      // Glow
-      let grd=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,POLE_GLOW_RADIUS);
-      grd.addColorStop(0, color.replace(')',`,${POLE_GLOW_ALPHA})`).replace('rgb','rgba'));
-      grd.addColorStop(1,'rgba(0,0,0,0)');
-      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(p.x,p.y,POLE_GLOW_RADIUS,0,2*Math.PI); ctx.fill();
-      // Core
-      ctx.fillStyle=color.replace(')',`,${POLE_CORE_ALPHA})`).replace('rgb','rgba');
-      ctx.beginPath(); ctx.arc(p.x,p.y,POLE_RADIUS,0,2*Math.PI); ctx.fill();
-      // Ring
-      ctx.strokeStyle=`rgba(255,255,255,${POLE_RING_ALPHA})`;
-      ctx.lineWidth=1; ctx.beginPath(); ctx.arc(p.x,p.y,POLE_RADIUS+1.5,0,2*Math.PI); ctx.stroke();
-    }
-  
-    function computeLargestGap(arr){
-      if(!arr.length) return {start:0,end:2*Math.PI};
-      let a=arr.map(v=>((v%(2*Math.PI))+2*Math.PI)%(2*Math.PI)).sort((u,v)=>u-v);
-      let maxG=-1, s=0,e=0;
-      for(let i=0;i<a.length-1;i++){
-        let g=a[i+1]-a[i]; if(g>maxG){maxG=g; s=a[i]; e=a[i+1];}
-      }
-      let wrap=a[0]+2*Math.PI-a[a.length-1];
-      if(wrap>maxG){s=a[a.length-1]; e=a[0]+2*Math.PI;}
-      return {start:s,end:e};
-    }
-  
-    function drawFieldLines(){
-      // fade trails
-      ctx.save(); ctx.globalCompositeOperation='destination-out';
-      ctx.fillStyle='rgba(0,0,0,0.08)'; ctx.fillRect(0,0,width,height);
-      ctx.restore();
-  
-      ctx.lineWidth=1.2; ctx.lineCap='round';
-      let arrivals=[];
-  
-      // positive seeds
-      for(let i=0;i<FIELD_LINE_COUNT;i++){
-        let ang=(i/FIELD_LINE_COUNT)*2*Math.PI, r=12, j=(Math.random()-.5)*2;
-        let sx=poleA.x+Math.cos(ang)*(r+j), sy=poleA.y+Math.sin(ang)*(r+j);
-        let path=traceLine({x:sx,y:sy},1,true);
-        if(path.length<2) continue;
-        let last=path[path.length-1];
-        if(len(sub(last,poleB))<TERMINATION_DIST+0.1){
-          let before=path[path.length-2]||last, vec=sub(before,poleB);
-          let a=Math.atan2(vec.y,vec.x); if(a<0) a+=2*Math.PI; arrivals.push(a);
-        }
-        let grad=ctx.createLinearGradient(path[0].x,path[0].y,path[path.length-1].x,path[path.length-1].y);
-        grad.addColorStop(0,COLOR_POS); grad.addColorStop(1,COLOR_NEG);
-        ctx.strokeStyle=grad; ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
-        for(let k=1;k<path.length;k++) ctx.lineTo(path[k].x,path[k].y);
-        ctx.stroke();
-      }
-  
-      // negative seeds
-      let gap=computeLargestGap(arrivals), span=gap.end-gap.start;
-      if(span<=0) span+=2*Math.PI;
-      let negCount=Math.max(4, Math.round(FIELD_LINE_COUNT*(span/(2*Math.PI))));
-      for(let i=0;i<negCount;i++){
-        let frac=(i+0.5)/negCount, ang=(gap.start+frac*span)%(2*Math.PI);
-        let r=12, j=(Math.random()-.5)*2;
-        let sx=poleB.x+Math.cos(ang)*(r+j), sy=poleB.y+Math.sin(ang)*(r+j);
-        let path=traceLine({x:sx,y:sy},-1,false); if(path.length<2) continue;
-        let grad=ctx.createLinearGradient(path[0].x,path[0].y,path[path.length-1].x,path[path.length-1].y);
-        grad.addColorStop(0,COLOR_NEG); grad.addColorStop(1,COLOR_POS);
-        ctx.strokeStyle=grad; ctx.beginPath(); ctx.moveTo(path[0].x,path[0].y);
-        for(let k=1;k<path.length;k++) ctx.lineTo(path[k].x,path[k].y);
-        ctx.stroke();
-      }
-  
-      drawPole(poleA,'rgb(4,12,39)');
-      drawPole(poleB,'rgb(107,66,16)');
-    }
-  
-    function animate(ts){
-      let t=ts*0.001*POLE_ANIM_SPEED, cx=width/2, cy=height/2;
-      let rx=Math.min(width,height)*0.3, ry=Math.min(width,height)*0.18;
-      poleA.x=cx+Math.cos(t*1.1+0.2)*rx;
-      poleA.y=cy+Math.sin(t*0.8)*ry;
-      poleB.x=cx+Math.cos(t*0.9+Math.PI+0.5)*rx*0.85;
-      poleB.y=cy+Math.sin(t*1.3+Math.PI*0.6)*ry*1.05;
-      drawFieldLines();
-      requestAnimationFrame(animate);
-    }
-  
-    // ——— Mobile-safe startup ———
-    function startAnimation(){
-      resize();
-      drawFieldLines();
-      requestAnimationFrame(animate);
-    }
-  
-    function init(){
-      startAnimation();
-      setTimeout(startAnimation, 200);
-    }
-  
-    // If readyState is already interactive/complete, run immediately
-    if (document.readyState !== 'loading') {
-      init();
-    } else {
-      document.addEventListener('DOMContentLoaded', init);
-    }
-  
-    // Also on load, pageshow (back/forward cache) and first touch
-    window.addEventListener('load', init);
-    window.addEventListener('pageshow', e => { if (e.persisted) init(); });
-    document.addEventListener('touchstart', init, { once:true });
-  </script>
 
+    function drawPole(p, color) {
+      // Glow
+      const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, POLE_GLOW_RADIUS);
+      grd.addColorStop(0, color.replace(')', ,${POLE_GLOW_ALPHA})).replace('rgb', 'rgba'));
+      grd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_GLOW_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      ctx.fillStyle = color.replace(')', ,${POLE_CORE_ALPHA})).replace('rgb', 'rgba');
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Outline
+      ctx.strokeStyle = rgba(255,255,255,${POLE_RING_ALPHA});
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POLE_RADIUS + 1.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    function computeLargestGap(angles) {
+      if (!angles.length) return { start: 0, end: 2 * Math.PI };
+      const a = angles.map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((u, v) => u - v);
+      let maxGap = -1, start = 0, end = 0;
+      for (let i = 0; i < a.length - 1; i++) {
+        const g = a[i+1] - a[i];
+        if (g > maxGap) { maxGap = g; start = a[i]; end = a[i+1]; }
+      }
+      const wrap = a[0] + 2 * Math.PI - a[a.length - 1];
+      if (wrap > maxGap) { start = a[a.length - 1]; end = a[0] + 2 * Math.PI; }
+      return { start, end };
+    }
+
+    function drawFieldLines() {
+      // transparent fade
+      ctx.save();
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(0, 0, width, height);
+      ctx.restore();
+
+      ctx.lineWidth = 1.2;
+      ctx.lineCap = 'round';
+
+      const arrival = [];
+
+      for (let i = 0; i < FIELD_LINE_COUNT; i++) {
+        const angle = (i / FIELD_LINE_COUNT) * 2 * Math.PI;
+        const r = 12, j = (Math.random() - .5) * 2;
+        const sx = poleA.x + Math.cos(angle) * (r + j);
+        const sy = poleA.y + Math.sin(angle) * (r + j);
+        const path = traceLine({ x: sx, y: sy }, 1, true);
+        if (path.length < 2) continue;
+
+        const last = path[path.length - 1];
+        if (len(sub(last, poleB)) < TERMINATION_DIST + 0.1) {
+          const before = path[path.length-2] || last;
+          const vec = sub(before, poleB);
+          let a = Math.atan2(vec.y, vec.x);
+          if (a < 0) a += 2 * Math.PI;
+          arrival.push(a);
+        }
+
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
+        grad.addColorStop(0, COLOR_POS);
+        grad.addColorStop(1, COLOR_NEG);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
+        ctx.stroke();
+      }
+
+      // negative seeds
+      const gap = computeLargestGap(arrival);
+      let span = gap.end - gap.start;
+      if (span <= 0) span += 2 * Math.PI;
+      const count = Math.max(4, Math.round(FIELD_LINE_COUNT * (span / (2 * Math.PI))));
+      for (let i = 0; i < count; i++) {
+        let ang = gap.start + (i + .5) / count * span;
+        ang %= 2 * Math.PI;
+        const r = 12, j = (Math.random() - .5) * 2;
+        const sx = poleB.x + Math.cos(ang) * (r + j);
+        const sy = poleB.y + Math.sin(ang) * (r + j);
+        const path = traceLine({ x: sx, y: sy }, -1, false);
+        if (path.length < 2) continue;
+
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
+        grad.addColorStop(0, COLOR_NEG);
+        grad.addColorStop(1, COLOR_POS);
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
+        ctx.stroke();
+      }
+
+      drawPole(poleA, 'rgb(4,12,39)');
+      drawPole(poleB, 'rgb(107,66,16)');
+    }
+
+    function animate(time) {
+      const t = time * 0.001 * POLE_ANIM_SPEED;
+      const cx = width / 2, cy = height / 2;
+      const rx = Math.min(width, height) * 0.3;
+      const ry = Math.min(width, height) * 0.18;
+    
+      poleA.x = cx + Math.cos(t * 1.1 + 0.2) * rx;
+      poleA.y = cy + Math.sin(t * 0.8) * ry;
+      poleB.x = cx + Math.cos(t * 0.9 + Math.PI + 0.5) * rx * 0.85;
+      poleB.y = cy + Math.sin(t * 1.3 + Math.PI * 0.6) * ry * 1.05;
+    
+      drawFieldLines();
+      requestAnimationFrame(animate);
+    }
+    
+    // --- Mobile‑safe animation start ---
+    function startAnimation() {
+      resize();                 // ensure canvas size is correct
+      drawFieldLines();         // force a visible first frame
+      requestAnimationFrame(animate);
+    }
+    
+    // Start as soon as the DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      startAnimation();
+      // Kick a delayed second start to overcome mobile rAF throttling
+      setTimeout(startAnimation, 200);
+    });
+    
+    // Safety net: start on first touch if still inactive
+    document.addEventListener('touchstart', startAnimation, { once: true });
+
+  </script>
 </body>
 </html>
