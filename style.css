@@ -1,61 +1,60 @@
 /* Reset and base */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --accent-color: #225FBA; }
 
-:root {
-  --accent-color: #225FBA;
-}
-
+html, body { height: 100%; }
 body {
   font-family: "Inter", sans-serif;
   line-height: 1.6;
   color: #f8f6f0;
-  background: transparent; /* Transparent so background image and canvas are visible */
+  background: transparent;
   overflow-x: hidden;
+  min-height: 100dvh;
 }
 
-/* Background image behind the animated field */
+/* Fixed background layer */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 #bg-image {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  z-index: 0; /* Bottom layer */
 }
 
-/* Animated field canvas */
 #field {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: block;
-  z-index: 1; /* Above background image */
-  pointer-events: none; /* Don't block clicks */
+}
+
+/* Content above animation */
+.hero, .about, footer {
+  position: relative;
+  z-index: 1;
 }
 
 /* Hero Section */
 .hero {
-  position: relative;
   width: 100%;
-  min-height: 100vh;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  z-index: 2; /* Above animation */
+  background: none;
 }
 
 .hero .overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute; inset: 0;
   background: rgba(2, 10, 25, 0.55);
   backdrop-filter: blur(2px);
   z-index: 1;
@@ -71,23 +70,14 @@ body {
 .tagline {
   font: normal normal 40px "Montserrat", Arial, sans-serif;
   font-size: 40px;
-  font-style: normal;
-  font-weight: normal;
   color: var(--accent-color);
   text-align: center;
   line-height: 40px;
   margin: 0 0 1.5rem 0;
 }
 
-.tagline .small-part {
-  font-size: 36px;
-  color: inherit;
-}
-
-.tagline .large-part {
-  font-size: 72px;
-  color: inherit;
-}
+.tagline .small-part { font-size: 36px; }
+.tagline .large-part { font-size: 72px; }
 
 .intro-text {
   font-size: 1.1rem;
@@ -99,55 +89,35 @@ body {
 /* About Section */
 .about {
   padding: 4rem 1rem;
-  background: rgba(10,10,10,0.85); /* Semi-transparent to show background/animation */
+  background: rgba(10,10,10,0.85);
   color: #e0eaff;
   text-align: center;
   border-top: 1px solid var(--accent-color);
-  z-index: 2;
-  position: relative;
 }
 
-.about .container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
+.about .container { max-width: 800px; margin: 0 auto; }
 .about h3 {
   font-family: "Montserrat", sans-serif;
   font-size: 2.25rem;
   margin-bottom: 1rem;
   color: var(--accent-color);
 }
-
-.about p {
-  font-size: 1.125rem;
-  margin-bottom: 1.5rem;
-}
+.about p { font-size: 1.125rem; margin-bottom: 1.5rem; }
 
 /* Footer */
 footer {
   padding: 1rem;
   text-align: center;
-  background: rgba(10,10,10,0.85); /* Semi-transparent */
+  background: rgba(10,10,10,0.85);
   color: var(--accent-color);
   font-size: 0.875rem;
   border-top: 1px solid var(--accent-color);
-  position: relative;
-  z-index: 2;
 }
 
-/* Responsive adjustments */
+/* Responsive */
 @media (max-width: 768px) {
-  .tagline {
-    font-size: 3.5rem;
-  }
-  .intro-text {
-    font-size: 1rem;
-  }
-  .about h3 {
-    font-size: 2rem;
-  }
-  .about p {
-    font-size: 1rem;
-  }
+  .tagline { font-size: 3.5rem; }
+  .intro-text { font-size: 1rem; }
+  .about h3 { font-size: 2rem; }
+  .about p { font-size: 1rem; }
 }
