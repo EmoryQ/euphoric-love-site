@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,11 +14,10 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Fixed Background Layer -->
-  <div class="bg-layer">
-    <img id="bg-image" src="hero.jpg" alt="">
-    <canvas id="field"></canvas>
-  </div>
+  <!-- Background image -->
+  <img id="bg-image" src="hero.jpg" alt="" />
+  <!-- Animated Background Canvas -->
+  <canvas id="field"></canvas>
 
   <!-- Hero Section -->
   <section class="hero">
@@ -27,8 +27,7 @@
         <span class="small-part">the</span><span class="large-part"> Field</span>
       </h2>
       <p class="intro-text">
-        A luminous realm where passion and tranquility intertwine, nurturing your
-        senses beneath an infinite sky.
+        ...
       </p>
     </div>
   </section>
@@ -38,14 +37,17 @@
     <div class="container">
       <h3>Welcome</h3>
       <p>
+        A luminous realm where passion and tranquility intertwine, nurturing your
+        senses beneath an infinite sky.
+
         Step into a space that celebrates openness, curiosity and love. Here,
-        the field of existence shimmers like dew‑coated grass under the
+        the field of existence shimmers like dew-coated grass under the
         starlit night — inviting you to wander, dream and savor life’s
         pleasures.
       </p>
       <p>
         Whether you pause to breathe in the cool evening air or dance
-        barefoot on amber blades, this is your sanctuary to explore the depths
+        barefoot in this sanctuary to explore the depths
         of your spirit and revel in the beauty of being alive.
       </p>
     </div>
@@ -57,6 +59,7 @@
   </footer>
 
   <script>
+    // Current year in footer
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
@@ -160,21 +163,20 @@
     }
 
     function computeLargestGap(angles) {
-      if (angles.length === 0) return { start: 0, end: Math.PI * 2 };
-      let a = angles.map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI));
-      a.sort((u, v) => u - v);
-      let maxGap = -1, gapStart = 0, gapEnd = 0;
+      if (!angles.length) return { start: 0, end: 2 * Math.PI };
+      const a = angles.map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((u, v) => u - v);
+      let maxGap = -1, start = 0, end = 0;
       for (let i = 0; i < a.length - 1; i++) {
-        const gap = a[i + 1] - a[i];
-        if (gap > maxGap) { maxGap = gap; gapStart = a[i]; gapEnd = a[i + 1]; }
+        const g = a[i+1] - a[i];
+        if (g > maxGap) { maxGap = g; start = a[i]; end = a[i+1]; }
       }
-      const wrapGap = a[0] + 2 * Math.PI - a[a.length - 1];
-      if (wrapGap > maxGap) { maxGap = wrapGap; gapStart = a[a.length - 1]; gapEnd = a[0] + 2 * Math.PI; }
-      return { start: gapStart, end: gapEnd };
+      const wrap = a[0] + 2 * Math.PI - a[a.length - 1];
+      if (wrap > maxGap) { start = a[a.length - 1]; end = a[0] + 2 * Math.PI; }
+      return { start, end };
     }
 
     function drawFieldLines() {
-      // Transparent fade
+      // transparent fade
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -184,27 +186,26 @@
       ctx.lineWidth = 1.2;
       ctx.lineCap = 'round';
 
-      const arrivalAngles = [];
+      const arrival = [];
 
-      // Positive lines
       for (let i = 0; i < FIELD_LINE_COUNT; i++) {
-        const angle = (i / FIELD_LINE_COUNT) * Math.PI * 2;
-        const r = 12;
-        const jitter = (Math.random() - 0.5) * 2;
-        const sx = poleA.x + Math.cos(angle) * (r + jitter);
-        const sy = poleA.y + Math.sin(angle) * (r + jitter);
+        const angle = (i / FIELD_LINE_COUNT) * 2 * Math.PI;
+        const r = 12, j = (Math.random() - .5) * 2;
+        const sx = poleA.x + Math.cos(angle) * (r + j);
+        const sy = poleA.y + Math.sin(angle) * (r + j);
         const path = traceLine({ x: sx, y: sy }, 1, true);
         if (path.length < 2) continue;
 
         const last = path[path.length - 1];
         if (len(sub(last, poleB)) < TERMINATION_DIST + 0.1) {
-          const before = path[path.length - 2] || last;
-          const arrivalVec = sub(before, poleB);
-          const angleOnNeg = Math.atan2(arrivalVec.y, arrivalVec.x);
-          arrivalAngles.push(angleOnNeg < 0 ? angleOnNeg + 2 * Math.PI : angleOnNeg);
+          const before = path[path.length-2] || last;
+          const vec = sub(before, poleB);
+          let a = Math.atan2(vec.y, vec.x);
+          if (a < 0) a += 2 * Math.PI;
+          arrival.push(a);
         }
 
-        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length - 1].x, path[path.length - 1].y);
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
         grad.addColorStop(0, COLOR_POS);
         grad.addColorStop(1, COLOR_NEG);
         ctx.strokeStyle = grad;
@@ -214,23 +215,21 @@
         ctx.stroke();
       }
 
-      // Negative lines
-      const gap = computeLargestGap(arrivalAngles);
-      let gapSpan = gap.end - gap.start;
-      if (gapSpan <= 0) gapSpan += 2 * Math.PI;
-      const negativeSeedCount = Math.max(4, Math.round(FIELD_LINE_COUNT * (gapSpan / (2 * Math.PI))));
-      for (let i = 0; i < negativeSeedCount; i++) {
-        const fraction = (i + 0.5) / negativeSeedCount;
-        let angle = gap.start + fraction * gapSpan;
-        angle %= 2 * Math.PI;
-        const r = 12;
-        const jitter = (Math.random() - 0.5) * 2;
-        const sx = poleB.x + Math.cos(angle) * (r + jitter);
-        const sy = poleB.y + Math.sin(angle) * (r + jitter);
+      // negative seeds
+      const gap = computeLargestGap(arrival);
+      let span = gap.end - gap.start;
+      if (span <= 0) span += 2 * Math.PI;
+      const count = Math.max(4, Math.round(FIELD_LINE_COUNT * (span / (2 * Math.PI))));
+      for (let i = 0; i < count; i++) {
+        let ang = gap.start + (i + .5) / count * span;
+        ang %= 2 * Math.PI;
+        const r = 12, j = (Math.random() - .5) * 2;
+        const sx = poleB.x + Math.cos(ang) * (r + j);
+        const sy = poleB.y + Math.sin(ang) * (r + j);
         const path = traceLine({ x: sx, y: sy }, -1, false);
         if (path.length < 2) continue;
 
-        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length - 1].x, path[path.length - 1].y);
+        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
         grad.addColorStop(0, COLOR_NEG);
         grad.addColorStop(1, COLOR_POS);
         ctx.strokeStyle = grad;
@@ -247,13 +246,13 @@
     function animate(time) {
       const t = time * 0.001 * POLE_ANIM_SPEED;
       const cx = width / 2, cy = height / 2;
-      const radiusX = Math.min(width, height) * 0.3;
-      const radiusY = Math.min(width, height) * 0.18;
+      const rx = Math.min(width, height) * 0.3;
+      const ry = Math.min(width, height) * 0.18;
 
-      poleA.x = cx + Math.cos(t * 1.1 + 0.2) * radiusX;
-      poleA.y = cy + Math.sin(t * 0.8) * radiusY;
-      poleB.x = cx + Math.cos(t * 0.9 + Math.PI + 0.5) * radiusX * 0.85;
-      poleB.y = cy + Math.sin(t * 1.3 + Math.PI * 0.6) * radiusY * 1.05;
+      poleA.x = cx + Math.cos(t * 1.1 + 0.2) * rx;
+      poleA.y = cy + Math.sin(t * 0.8) * ry;
+      poleB.x = cx + Math.cos(t * 0.9 + Math.PI + 0.5) * rx * 0.85;
+      poleB.y = cy + Math.sin(t * 1.3 + Math.PI * 0.6) * ry * 1.05;
 
       drawFieldLines();
       requestAnimationFrame(animate);
