@@ -90,18 +90,23 @@
     function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
-
+    
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-
-      // Always reset transform fully to identity first
+    
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      // Scale uniformly to dpr
       ctx.scale(dpr, dpr);
     }
+    
+    // Handle first load + delayed mobile correction
+    window.addEventListener('load', () => {
+      resize();
+      setTimeout(resize, 500); // fix for mobile URL bar
+    });
+    
     window.addEventListener('resize', resize);
-    resize();
+    window.addEventListener('orientationchange', () => setTimeout(resize, 300));
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
 
     let poleA = { x: 0, y: 0, charge: 1 };
     let poleB = { x: 0, y: 0, charge: -1 };
