@@ -1,4 +1,4 @@
-<!-- index.html -->
+  <!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,9 +90,15 @@
     function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+
+      // Always reset transform fully to identity first
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      // Scale uniformly to dpr
+      ctx.scale(dpr, dpr);
     }
     window.addEventListener('resize', resize);
     resize();
