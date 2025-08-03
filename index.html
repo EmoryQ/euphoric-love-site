@@ -1,5 +1,3 @@
-
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +26,8 @@
         <span class="small-part">the</span><span class="large-part"> Field</span>
       </h2>
       <p class="intro-text">
-        ...
+        A luminous realm where passion and tranquility intertwine, nurturing your
+        senses beneath an infinite sky.
       </p>
     </div>
   </section>
@@ -38,18 +37,15 @@
     <div class="container">
       <h3>Welcome</h3>
       <p>
-        A luminous realm where passion and tranquility intertwine, nurturing your
-        senses beneath an infinite sky.
-
         Step into a space that celebrates openness, curiosity and love. Here,
-        the field of existence shimmers like dew-coated grass under the
+        the field of existence shimmers like dew‑coated grass under the
         starlit night — inviting you to wander, dream and savor life’s
         pleasures.
       </p>
       <p>
-        Whether you pause to breathe in the cool evening air or dance
-        barefoot in this sanctuary to explore the depths
-        of your spirit and revel in the beauty of being alive.
+        Whether you pause to breathe in the cool evening air or dance barefoot,
+        this sanctuary invites you to explore the depths of your spirit and revel
+        in the beauty of being alive.
       </p>
     </div>
   </section>
@@ -60,7 +56,7 @@
   </footer>
 
   <script>
-    // Current year in footer
+    // Footer year
     document.getElementById("year").textContent = new Date().getFullYear();
   </script>
 
@@ -86,60 +82,51 @@
 
     const canvas = document.getElementById('field');
     const ctx = canvas.getContext('2d');
-    let width = 0, height = 0, dpr = window.devicePixelRatio || 1;
+    let width = 0, height = 0;
+    let dpr = window.devicePixelRatio || 1;
 
     function resize() {
       width = window.innerWidth;
       height = window.innerHeight;
-    
       canvas.width = width * dpr;
       canvas.height = height * dpr;
-    
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset
-      ctx.scale(dpr, dpr);                // scale uniformly for perfect circles
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
     }
-    
-    // Handle first load + delayed mobile correction
-    window.addEventListener('load', () => {
-      resize();
-      setTimeout(resize, 500); // fix for mobile URL bar resize
-    });
-    
+
     window.addEventListener('resize', resize);
     window.addEventListener('orientationchange', () => setTimeout(resize, 300));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
 
-    let poleA = { x: 0, y: 0, charge: 1 };
-    let poleB = { x: 0, y: 0, charge: -1 };
-
+    // Vector helpers
     function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
     function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
     function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
     function len(v) { return Math.hypot(v.x, v.y); }
     function normalize(v) {
       const l = Math.hypot(v.x, v.y);
-      return l === 0 ? { x: 0, y: 0 } : { x: v.x / l, y: v.y / l };
+      return l ? { x: v.x / l, y: v.y / l } : { x: 0, y: 0 };
     }
+
+    let poleA = { x: 0, y: 0, charge: 1 };
+    let poleB = { x: 0, y: 0, charge: -1 };
 
     function fieldAt(p) {
       const rA = sub(p, poleA), rB = sub(p, poleB);
       const dA = Math.pow(len(rA), 3), dB = Math.pow(len(rB), 3);
       let e = { x: 0, y: 0 };
-      if (dA !== 0) { e.x += rA.x / dA * poleA.charge; e.y += rA.y / dA * poleA.charge; }
-      if (dB !== 0) { e.x += rB.x / dB * poleB.charge; e.y += rB.y / dB * poleB.charge; }
+      if (dA) { e.x += rA.x / dA * poleA.charge; e.y += rA.y / dA * poleA.charge; }
+      if (dB) { e.x += rB.x / dB * poleB.charge; e.y += rB.y / dB * poleB.charge; }
       return e;
     }
 
     function traceLine(start, direction = 1, terminateAtOpposite = true) {
-      const points = [];
-      let p = { x: start.x, y: start.y };
-      points.push({ x: p.x, y: p.y });
-
+      const points = [{ x: start.x, y: start.y }];
+      let p = { ...start };
       for (let i = 0; i < MAX_STEPS_SAFE; i++) {
         const f = fieldAt(p);
         let fn = normalize(f);
         if (direction === -1) fn = mul(fn, -1);
-        if (fn.x === 0 && fn.y === 0) break;
+        if (!fn.x && !fn.y) break;
 
         p = add(p, mul(fn, STEP_SIZE));
         points.push({ x: p.x, y: p.y });
@@ -153,7 +140,7 @@
     function drawPole(p, color) {
       // Glow
       const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, POLE_GLOW_RADIUS);
-      grd.addColorStop(0, color.replace(')', ,${POLE_GLOW_ALPHA})).replace('rgb', 'rgba'));
+      grd.addColorStop(0, color.replace(')', `,${POLE_GLOW_ALPHA})`).replace('rgb', 'rgba'));
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.fillStyle = grd;
       ctx.beginPath();
@@ -161,13 +148,13 @@
       ctx.fill();
 
       // Core
-      ctx.fillStyle = color.replace(')', ,${POLE_CORE_ALPHA})).replace('rgb', 'rgba');
+      ctx.fillStyle = color.replace(')', `,${POLE_CORE_ALPHA})`).replace('rgb', 'rgba');
       ctx.beginPath();
       ctx.arc(p.x, p.y, POLE_RADIUS, 0, Math.PI * 2);
       ctx.fill();
 
       // Outline
-      ctx.strokeStyle = rgba(255,255,255,${POLE_RING_ALPHA});
+      ctx.strokeStyle = `rgba(255,255,255,${POLE_RING_ALPHA})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(p.x, p.y, POLE_RADIUS + 1.5, 0, Math.PI * 2);
@@ -183,12 +170,12 @@
         if (g > maxGap) { maxGap = g; start = a[i]; end = a[i+1]; }
       }
       const wrap = a[0] + 2 * Math.PI - a[a.length - 1];
-      if (wrap > maxGap) { start = a[a.length - 1]; end = a[0] + 2 * Math.PI; }
+      if (wrap > maxGap) { start = a[a.length-1]; end = a[0] + 2 * Math.PI; }
       return { start, end };
     }
 
     function drawFieldLines() {
-      // transparent fade
+      // clear/fade
       ctx.save();
       ctx.globalCompositeOperation = 'destination-out';
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -197,12 +184,12 @@
 
       ctx.lineWidth = 1.2;
       ctx.lineCap = 'round';
+      const arrivalAngles = [];
 
-      const arrival = [];
-
+      // Positive lines
       for (let i = 0; i < FIELD_LINE_COUNT; i++) {
         const angle = (i / FIELD_LINE_COUNT) * 2 * Math.PI;
-        const r = 12, j = (Math.random() - .5) * 2;
+        const r = 12, j = (Math.random() - 0.5) * 2;
         const sx = poleA.x + Math.cos(angle) * (r + j);
         const sy = poleA.y + Math.sin(angle) * (r + j);
         const path = traceLine({ x: sx, y: sy }, 1, true);
@@ -214,7 +201,7 @@
           const vec = sub(before, poleB);
           let a = Math.atan2(vec.y, vec.x);
           if (a < 0) a += 2 * Math.PI;
-          arrival.push(a);
+          arrivalAngles.push(a);
         }
 
         const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
@@ -227,17 +214,18 @@
         ctx.stroke();
       }
 
-      // negative seeds
-      const gap = computeLargestGap(arrival);
-      let span = gap.end - gap.start;
-      if (span <= 0) span += 2 * Math.PI;
-      const count = Math.max(4, Math.round(FIELD_LINE_COUNT * (span / (2 * Math.PI))));
-      for (let i = 0; i < count; i++) {
-        let ang = gap.start + (i + .5) / count * span;
-        ang %= 2 * Math.PI;
-        const r = 12, j = (Math.random() - .5) * 2;
-        const sx = poleB.x + Math.cos(ang) * (r + j);
-        const sy = poleB.y + Math.sin(ang) * (r + j);
+      // Negative lines
+      const gap = computeLargestGap(arrivalAngles);
+      let gapSpan = gap.end - gap.start;
+      if (gapSpan <= 0) gapSpan += 2 * Math.PI;
+      const negativeSeedCount = Math.max(4, Math.round(FIELD_LINE_COUNT * (gapSpan / (2 * Math.PI))));
+      for (let i = 0; i < negativeSeedCount; i++) {
+        const fraction = (i + 0.5) / negativeSeedCount;
+        let angle = gap.start + fraction * gapSpan;
+        angle %= 2 * Math.PI;
+        const r = 12, j = (Math.random() - 0.5) * 2;
+        const sx = poleB.x + Math.cos(angle) * (r + j);
+        const sy = poleB.y + Math.sin(angle) * (r + j);
         const path = traceLine({ x: sx, y: sy }, -1, false);
         if (path.length < 2) continue;
 
@@ -260,33 +248,28 @@
       const cx = width / 2, cy = height / 2;
       const rx = Math.min(width, height) * 0.3;
       const ry = Math.min(width, height) * 0.18;
-    
+
       poleA.x = cx + Math.cos(t * 1.1 + 0.2) * rx;
       poleA.y = cy + Math.sin(t * 0.8) * ry;
       poleB.x = cx + Math.cos(t * 0.9 + Math.PI + 0.5) * rx * 0.85;
       poleB.y = cy + Math.sin(t * 1.3 + Math.PI * 0.6) * ry * 1.05;
-    
+
       drawFieldLines();
       requestAnimationFrame(animate);
     }
-    
-    // --- Mobile‑safe animation start ---
-    function startAnimation() {
-      resize();                 // ensure canvas size is correct
-      drawFieldLines();         // force a visible first frame
+
+    function start() {
+      resize();
+      drawFieldLines();         // first frame visible immediately
       requestAnimationFrame(animate);
     }
-    
-    // Start as soon as the DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      startAnimation();
-      // Kick a delayed second start to overcome mobile rAF throttling
-      setTimeout(startAnimation, 200);
-    });
-    
-    // Safety net: start on first touch if still inactive
-    document.addEventListener('touchstart', startAnimation, { once: true });
 
+    // Start on DOM ready or immediate if already interactive
+    if (document.readyState !== 'loading') start();
+    else document.addEventListener('DOMContentLoaded', start);
+
+    // iOS Safari wake-up on first touch (for link-open throttling)
+    document.addEventListener('touchstart', start, { once: true });
   </script>
 </body>
 </html>
