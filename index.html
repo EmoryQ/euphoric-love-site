@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -8,10 +9,10 @@
   <!-- Google Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@300;400;700&family=Montserrat&display=swap"
-    rel="stylesheet"
-  />
+    rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
   <!-- Background image -->
   <img id="bg-image" src="hero.jpg" alt="" />
@@ -23,7 +24,7 @@
     <div class="overlay"></div>
     <div class="hero-content">
       <h2 class="tagline">
-        <span class="small-part">the</span><span class="large-part"> Field</span>
+        <span class="small-part">the</span><span class="large-part">Field</span>
       </h2>
       <p class="intro-text">
         A luminous realm where passion and tranquility intertwine, nurturing your
@@ -63,7 +64,10 @@
   <!-- Dipole Field Animation -->
   <script>
     // ===== Parameters =====
-    const FIELD_LINE_COUNT = 60;
+    // Base line count, will be adjusted by screen width
+    const BASE_LINE_COUNT = 60;
+    let fieldLineCount = BASE_LINE_COUNT;
+
     const STEP_SIZE = 10;
     const TERMINATION_DIST = 8;
     const POLE_ANIM_SPEED = 0.13;
@@ -92,50 +96,27 @@
       canvas.height = height * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
+
+      // User requested constant line count regardless of screen size
+      fieldLineCount = BASE_LINE_COUNT;
     }
 
-    window.addEventListener('resize', resize);
+    // Debounce resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(resize, 200);
+    });
+
     window.addEventListener('orientationchange', () => setTimeout(resize, 300));
 
     // Vector helpers
     function add(a, b) { return { x: a.x + b.x, y: a.y + b.y }; }
     function sub(a, b) { return { x: a.x - b.x, y: a.y - b.y }; }
-    function mul(a, s) { return { x: a.x * s, y: a.y * s }; }
     function len(v) { return Math.hypot(v.x, v.y); }
-    function normalize(v) {
-      const l = Math.hypot(v.x, v.y);
-      return l ? { x: v.x / l, y: v.y / l } : { x: 0, y: 0 };
-    }
 
-    let poleA = { x: 0, y: 0, charge: 1 };
-    let poleB = { x: 0, y: 0, charge: -1 };
-
-    function fieldAt(p) {
-      const rA = sub(p, poleA), rB = sub(p, poleB);
-      const dA = Math.pow(len(rA), 3), dB = Math.pow(len(rB), 3);
-      let e = { x: 0, y: 0 };
-      if (dA) { e.x += rA.x / dA * poleA.charge; e.y += rA.y / dA * poleA.charge; }
-      if (dB) { e.x += rB.x / dB * poleB.charge; e.y += rB.y / dB * poleB.charge; }
-      return e;
-    }
-
-    function traceLine(start, direction = 1, terminateAtOpposite = true) {
-      const points = [{ x: start.x, y: start.y }];
-      let p = { ...start };
-      for (let i = 0; i < MAX_STEPS_SAFE; i++) {
-        const f = fieldAt(p);
-        let fn = normalize(f);
-        if (direction === -1) fn = mul(fn, -1);
-        if (!fn.x && !fn.y) break;
-
-        p = add(p, mul(fn, STEP_SIZE));
-        points.push({ x: p.x, y: p.y });
-
-        if (direction === 1 && terminateAtOpposite && len(sub(p, poleB)) < TERMINATION_DIST) break;
-        if (p.x < -50 || p.x > width + 50 || p.y < -50 || p.y > height + 50) break;
-      }
-      return points;
-    }
+    let poleA = { x: 0, y: 0 };
+    let poleB = { x: 0, y: 0 };
 
     function drawPole(p, color) {
       // Glow
@@ -161,19 +142,6 @@
       ctx.stroke();
     }
 
-    function computeLargestGap(angles) {
-      if (!angles.length) return { start: 0, end: 2 * Math.PI };
-      const a = angles.map(x => ((x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)).sort((u, v) => u - v);
-      let maxGap = -1, start = 0, end = 0;
-      for (let i = 0; i < a.length - 1; i++) {
-        const g = a[i+1] - a[i];
-        if (g > maxGap) { maxGap = g; start = a[i]; end = a[i+1]; }
-      }
-      const wrap = a[0] + 2 * Math.PI - a[a.length - 1];
-      if (wrap > maxGap) { start = a[a.length-1]; end = a[0] + 2 * Math.PI; }
-      return { start, end };
-    }
-
     function drawFieldLines() {
       // clear/fade
       ctx.save();
@@ -184,58 +152,79 @@
 
       ctx.lineWidth = 1.2;
       ctx.lineCap = 'round';
-      const arrivalAngles = [];
 
-      // Positive lines
-      for (let i = 0; i < FIELD_LINE_COUNT; i++) {
-        const angle = (i / FIELD_LINE_COUNT) * 2 * Math.PI;
-        const r = 12, j = (Math.random() - 0.5) * 2;
-        const sx = poleA.x + Math.cos(angle) * (r + j);
-        const sy = poleA.y + Math.sin(angle) * (r + j);
-        const path = traceLine({ x: sx, y: sy }, 1, true);
-        if (path.length < 2) continue;
+      // Gradient for the whole field based on potential (roughly projected on axis)
+      const grad = ctx.createLinearGradient(poleA.x, poleA.y, poleB.x, poleB.y);
+      grad.addColorStop(0, COLOR_POS);
+      grad.addColorStop(1, COLOR_NEG);
+      ctx.strokeStyle = grad;
 
-        const last = path[path.length - 1];
-        if (len(sub(last, poleB)) < TERMINATION_DIST + 0.1) {
-          const before = path[path.length-2] || last;
-          const vec = sub(before, poleB);
-          let a = Math.atan2(vec.y, vec.x);
-          if (a < 0) a += 2 * Math.PI;
-          arrivalAngles.push(a);
+      const cx = (poleA.x + poleB.x) / 2;
+      const cy = (poleA.y + poleB.y) / 2;
+      const dx = poleB.x - poleA.x;
+      const dy = poleB.y - poleA.y;
+
+      // Perpendicular vector to AB
+      const pdx = -dy;
+      const pdy = dx;
+
+      for (let i = 0; i < fieldLineCount; i++) {
+        const theta = (i / fieldLineCount) * 2 * Math.PI;
+
+        // Tangent vector at A
+        const tx = Math.cos(theta);
+        const ty = Math.sin(theta);
+
+        // Check for parallel case (tangent parallel to AB)
+        // Cross product of T and AB
+        const cross = tx * dy - ty * dx;
+
+        // If nearly parallel, draw a straight line
+        if (Math.abs(cross) < 1e-5) {
+          const huge = Math.max(width, height) * 5;
+          ctx.beginPath();
+          ctx.moveTo(poleA.x - tx * huge, poleA.y - ty * huge);
+          ctx.lineTo(poleA.x + tx * huge, poleA.y + ty * huge);
+          ctx.stroke();
+          continue;
         }
 
-        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
-        grad.addColorStop(0, COLOR_POS);
-        grad.addColorStop(1, COLOR_NEG);
-        ctx.strokeStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
-        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
-        ctx.stroke();
-      }
+        // Find Center C of the circle passing through A and B tangent to T at A
+        // C is intersection of:
+        // 1. Perpendicular bisector of AB: M + t * P
+        // 2. Line through A perpendicular to T: A + s * N
 
-      // Negative lines
-      const gap = computeLargestGap(arrivalAngles);
-      let gapSpan = gap.end - gap.start;
-      if (gapSpan <= 0) gapSpan += 2 * Math.PI;
-      const negativeSeedCount = Math.max(4, Math.round(FIELD_LINE_COUNT * (gapSpan / (2 * Math.PI))));
-      for (let i = 0; i < negativeSeedCount; i++) {
-        const fraction = (i + 0.5) / negativeSeedCount;
-        let angle = gap.start + fraction * gapSpan;
-        angle %= 2 * Math.PI;
-        const r = 12, j = (Math.random() - 0.5) * 2;
-        const sx = poleB.x + Math.cos(angle) * (r + j);
-        const sy = poleB.y + Math.sin(angle) * (r + j);
-        const path = traceLine({ x: sx, y: sy }, -1, false);
-        if (path.length < 2) continue;
+        const vax = cx - poleA.x;
+        const vay = cy - poleA.y;
 
-        const grad = ctx.createLinearGradient(path[0].x, path[0].y, path[path.length-1].x, path[path.length-1].y);
-        grad.addColorStop(0, COLOR_NEG);
-        grad.addColorStop(1, COLOR_POS);
-        ctx.strokeStyle = grad;
+        const nx = -ty; // Normal to tangent
+        const ny = tx;
+
+        // Intersection logic
+        const PxN = pdx * ny - pdy * nx;
+        const VaxN = vax * ny - vay * nx;
+        const t = -VaxN / PxN;
+
+        const centerx = cx + t * pdx;
+        const centery = cy + t * pdy;
+
+        const radius = Math.hypot(poleA.x - centerx, poleA.y - centery);
+
+        // Angles for arc
+        const startAngle = Math.atan2(poleA.y - centery, poleA.x - centerx);
+        const endAngle = Math.atan2(poleB.y - centery, poleB.x - centerx);
+
+        // Determine direction (CW or CCW)
+        // Tangent at A for CW circle is startAngle + PI/2
+        const tanCWx = Math.cos(startAngle + Math.PI / 2);
+        const tanCWy = Math.sin(startAngle + Math.PI / 2);
+
+        // Dot product with desired tangent T
+        const dot = tanCWx * tx + tanCWy * ty;
+        const anticlockwise = dot < 0;
+
         ctx.beginPath();
-        ctx.moveTo(path[0].x, path[0].y);
-        for (let j = 1; j < path.length; j++) ctx.lineTo(path[j].x, path[j].y);
+        ctx.arc(centerx, centery, radius, startAngle, endAngle, anticlockwise);
         ctx.stroke();
       }
 
@@ -272,4 +261,5 @@
     document.addEventListener('touchstart', start, { once: true });
   </script>
 </body>
+
 </html>

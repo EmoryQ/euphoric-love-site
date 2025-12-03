@@ -8,10 +8,14 @@
 
 :root {
   --accent-color: #225FBA;
+  --text-color: #f8f6f0;
+  --bg-overlay: rgba(2, 10, 25, 0.01);
+  --section-bg: rgba(10, 10, 10, 0.85);
 }
 
 /* Force full‐height & smooth scrolling on mobile */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   overflow-x: hidden;
@@ -19,8 +23,9 @@ html, body {
   -webkit-overflow-scrolling: touch;
   font-family: "Inter", sans-serif;
   line-height: 1.6;
-  color: #f8f6f0;
-  background: transparent; /* let the <img> and <canvas> show */
+  color: var(--text-color);
+  background: transparent;
+  /* let the <img> and <canvas> show */
 }
 
 /* Background image behind the animated field */
@@ -31,7 +36,8 @@ html, body {
   width: 100vw;
   height: 100vh;
   object-fit: cover;
-  z-index: 0;             /* bottom layer */
+  z-index: 0;
+  /* bottom layer */
   pointer-events: none;
   display: block;
 }
@@ -42,7 +48,8 @@ html, body {
   inset: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1;             /* above image */
+  z-index: 1;
+  /* above image */
   pointer-events: none;
 }
 
@@ -55,14 +62,18 @@ html, body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  z-index: 2;             /* above canvas */
+  z-index: 2;
+  /* above canvas */
+  padding: 1rem;
 }
 
 .hero .overlay {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(2, 10, 25, 0.01);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-overlay);
   backdrop-filter: blur(2px);
   z-index: 1;
 }
@@ -71,26 +82,34 @@ html, body {
   position: relative;
   z-index: 2;
   max-width: 700px;
+  width: 100%;
   padding: 1.5rem;
 }
 
 .tagline {
-  font: normal normal 40px "Montserrat", Arial, sans-serif;
+  font-family: "Montserrat", Arial, sans-serif;
   color: var(--accent-color);
-  line-height: 40px;
+  line-height: 1;
+  /* Restored to original tighter line-height */
   margin-bottom: 1.5rem;
+  /* Thinner and larger as requested. Original was ~72px for large part. */
+  font-weight: 400;
+  font-size: clamp(4rem, 10vw, 6rem);
+  white-space: nowrap;
 }
 
 .tagline .small-part {
-  font-size: 36px;
+  font-size: 0.5em;
+  display: inline-block;
+  margin-right: 0.2em;
 }
 
 .tagline .large-part {
-  font-size: 72px;
+  font-size: 1em;
 }
 
 .intro-text {
-  font-size: 1.1rem;
+  font-size: clamp(1rem, 2vw, 1.25rem);
   max-width: 600px;
   margin: 0 auto;
   color: #e0eaff;
@@ -100,8 +119,8 @@ html, body {
 .about {
   position: relative;
   z-index: 2;
-  padding: 4rem 1rem;
-  background: rgba(10,10,10,0.85);
+  padding: clamp(3rem, 5vw, 5rem) 1.5rem;
+  background: var(--section-bg);
   color: #e0eaff;
   text-align: center;
   border-top: 1px solid var(--accent-color);
@@ -114,40 +133,30 @@ html, body {
 
 .about h3 {
   font-family: "Montserrat", sans-serif;
-  font-size: 2.25rem;
-  margin-bottom: 1rem;
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  margin-bottom: 1.5rem;
   color: var(--accent-color);
 }
 
 .about p {
-  font-size: 1.125rem;
+  font-size: clamp(1rem, 1.5vw, 1.125rem);
   margin-bottom: 1.5rem;
+  line-height: 1.7;
 }
 
 /* Footer */
 footer {
   position: relative;
   z-index: 2;
-  padding: 1rem;
+  padding: 1.5rem;
   text-align: center;
-  background: rgba(10,10,10,0.85);
+  background: var(--section-bg);
   color: var(--accent-color);
   font-size: 0.875rem;
   border-top: 1px solid var(--accent-color);
 }
 
 /* Responsive tweaks */
-@media (max-width: 768px) {
-  .tagline {
-    font-size: 3.5rem;
-  }
-  .intro-text {
-    font-size: 1rem;
-  }
-  .about h3 {
-    font-size: 2rem;
-  }
-  .about p {
-    font-size: 1rem;
-  }
+@media (min-width: 768px) {
+  /* No specific tagline tweaks needed anymore as it's fluid and always inline */
 }
